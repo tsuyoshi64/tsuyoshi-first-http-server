@@ -22,7 +22,6 @@ main
 Thumbs.db
 
 # IDE & Editor artifacts
-.vscode/
 .idea/
 *.swp
 *.swo
