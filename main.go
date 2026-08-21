@@ -1,7 +1,19 @@
 package main
 
-import "fmt"
+import (
+	"log"
+	"net/http"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
+	mux := http.NewServeMux()
+
+	server := http.Server{
+		Handler: mux,
+		Addr:    ":8080",
+	}
+
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("couldn't start the server: %v", err)
+	}
 }
