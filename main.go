@@ -40,14 +40,13 @@ func (cfg *apiConfig) handlerHealth(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-
 func main() {
 	apiCfg := &apiConfig{}
 	mux := http.NewServeMux()
-	
-	mux.HandleFunc("/healthz", apiCfg.handlerHealth)
-	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("/reset", apiCfg.handlerReset)
+
+	mux.HandleFunc("GET /healthz", apiCfg.handlerHealth)
+	mux.HandleFunc("GET /metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("POST /reset", apiCfg.handlerReset)
 
 	fileServer := http.FileServer(http.Dir("."))
 
