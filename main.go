@@ -22,6 +22,8 @@ func main() {
 		log.Fatal("DB_URL environment variale is not set")
 	}
 
+	platform := os.Getenv("PLATFORM")
+
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatalf("error opening database link: %s", err)
@@ -30,11 +32,15 @@ func main() {
 
 	dbQueries := database.New(db)
 
-	apiCfg := &apiConfig{DB: dbQueries}
+	apiCfg := &apiConfig{
+		DB:       dbQueries,
+		platform: platform,
+	}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/healthz", apiCfg.handlerHealth)
 	mux.HandleFunc("POST /api/validate_chirp", apiCfg.handlerValidateChirp)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 
