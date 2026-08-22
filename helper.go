@@ -1,9 +1,11 @@
 package main
 
 import (
-	"net/http"
-	"log"
 	"encoding/json"
+	"log"
+	"net/http"
+	"slices"
+	"strings"
 )
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
@@ -26,4 +28,21 @@ func respondWithJson(w http.ResponseWriter, code int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(dat)
+}
+
+func cleanProfanity(body string) string {
+	profaneWords := []string{
+		"kerfuffle",
+		"sharbert",
+		"fornax",
+	}
+	words := strings.Split(body, " ")
+
+	for i, word := range words {
+		lowered := strings.ToLower(word)
+		if slices.Contains(profaneWords, lowered) {
+			words[i] = "****"
+		}
+	}
+	return strings.Join(words, " ")
 }

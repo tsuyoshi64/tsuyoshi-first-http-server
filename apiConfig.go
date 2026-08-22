@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"sync/atomic"
-	"net/http"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"sync/atomic"
 )
 
 type apiConfig struct {
@@ -50,7 +50,7 @@ func (cfg *apiConfig) handlerValidateChirp(w http.ResponseWriter, r *http.Reques
 		Body string `json:"body"`
 	}
 	type validRes struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -66,7 +66,9 @@ func (cfg *apiConfig) handlerValidateChirp(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	cleanedText := cleanProfanity(params.Body)
+
 	respondWithJson(w, http.StatusOK, validRes{
-		Valid: true,
+		CleanedBody: cleanedText,
 	})
 }
