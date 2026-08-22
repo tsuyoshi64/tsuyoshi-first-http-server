@@ -24,6 +24,14 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
+type Chirp struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Body      string    `json:"body"`
+	UserID    uuid.UUID `json:"user_id"`
+}
+
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.fileserverHits.Add(1)
@@ -69,17 +77,15 @@ func (cfg *apiConfig) handlerHealth(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-func (cfg *apiConfig) handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
+	// Validating steps
 	type parameters struct {
-		Body string `json:"body"`
-	}
-	type validRes struct {
-		CleanedBody string `json:"cleaned_body"`
+		Body   string    `json:"body"`
+		UserID uuid.UUID `json:"user_id"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-
 	if err := decoder.Decode(&params); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Something went wrong")
 		return
@@ -92,8 +98,25 @@ func (cfg *apiConfig) handlerValidateChirp(w http.ResponseWriter, r *http.Reques
 
 	cleanedText := cleanProfanity(params.Body)
 
-	respondWithJson(w, http.StatusOK, validRes{
-		CleanedBody: cleanedText,
+	// Save the reocrd in the db
+	dbChirp, err := cfg.DB.CreateChirp(
+		r.Context(),
+		database.CreateChirpParams{
+			Body:   cleanedText,
+			UserID: params.UserID,
+		})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not create chirp")
+		return
+	}
+
+	// Map the db
+	respondWithJson(w, http.StatusCreated, Chirp{
+		ID:        dbChirp.ID,
+		CreatedAt: dbChirp.CreatedAt,
+		UpdatedAt: dbChirp.UpdatedAt,
+		Body:      dbChirp.Body,
+		UserID:    dbChirp.UserID,
 	})
 }
 
@@ -121,4 +144,25 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		UpdatedAt: dbUser.UpdatedAt,
 		Email:     dbUser.Email,
 	})
+}
+
+func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
+	dbChirps, err := cfg.DB.GetChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not retrive chirps")
+		return
+	}
+
+	chirps := []Chirp{}
+	for _, dbChirp := range dbChirps {
+		chirps = append(chirps, Chirp{
+			ID:        dbChirp.ID,
+			CreatedAt: dbChirp.CreatedAt,
+			UpdatedAt: dbChirp.UpdatedAt,
+			Body:      dbChirp.Body,
+			UserID:    dbChirp.UserID,
+		})
+	}
+
+	respondWithJson(w, http.StatusOK, chirps)
 }
