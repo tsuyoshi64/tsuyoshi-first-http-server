@@ -1,12 +1,36 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"github.com/tsuyoshi64/tsuyoshi-first-http-server/internal/database"
 )
 
 func main() {
-	apiCfg := &apiConfig{}
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading environmental variables")
+	}
+
+	dbUrl := os.Getenv("DB_URL")
+	if dbUrl == "" {
+		log.Fatal("DB_URL environment variale is not set")
+	}
+
+	db, err := sql.Open("postgres", dbUrl)
+	if err != nil {
+		log.Fatalf("error opening database link: %s", err)
+	}
+	defer db.Close()
+
+	dbQueries := database.New(db)
+
+	apiCfg := &apiConfig{DB: dbQueries}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/healthz", apiCfg.handlerHealth)
