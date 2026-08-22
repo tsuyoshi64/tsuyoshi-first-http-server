@@ -38,9 +38,11 @@ func main() {
 	}
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /api/healthz", apiCfg.handlerHealth)
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
 	mux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirpByID)
+
+	mux.HandleFunc("GET /api/healthz", apiCfg.handlerHealth)
 	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
