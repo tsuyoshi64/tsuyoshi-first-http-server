@@ -1,11 +1,16 @@
-# Compiled binaries
+# Compiled binaries and build outputs
+out/
 out
+tsuyoshi-first-http-server
 main
+chirpy
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+build/
+bin/
 
 # Test binary built by 'go test -c'
 *.test
