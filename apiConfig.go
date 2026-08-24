@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -333,6 +334,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	authorIDString := r.URL.Query().Get("author_id")
+	sortOrder := r.URL.Query().Get("sort")
 
 	var dbChirps []database.Chirp
 	var err error
@@ -361,6 +363,28 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 			UpdatedAt: dbChirp.UpdatedAt,
 			Body:      dbChirp.Body,
 			UserID:    dbChirp.UserID,
+		})
+	}
+
+	if sortOrder == "desc" {
+		slices.SortFunc(chirps, func(a, b Chirp) int {
+			if a.CreatedAt.After(b.CreatedAt) {
+				return -1
+			}
+			if a.CreatedAt.Before(b.CreatedAt) {
+				return 1
+			}
+			return 0
+		})
+	} else {
+		slices.SortFunc(chirps, func(a, b Chirp) int {
+			if a.CreatedAt.After(b.CreatedAt) {
+				return 1
+			}
+			if a.CreatedAt.Before(b.CreatedAt) {
+				return -1
+			}
+			return 0
 		})
 	}
 
