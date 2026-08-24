@@ -45,7 +45,7 @@ PLATFORM=dev
 
 `PLATFORM=dev` enables `POST /admin/reset`. Use any other value outside local development.
 
-You can generate a nice long random string on the command line like this:
+You can generate a nice long random string for the key on the command line like this:
 ```sh
 openssl rand -base64 64
 ```
