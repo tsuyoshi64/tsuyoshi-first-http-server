@@ -217,6 +217,61 @@ func (cfg *apiConfig) handlerRevoke(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
+	type parameter struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	// Enforce authen usin JWT from headers
+	tokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Validate the JWT sigs and extract the UserID
+	userID, err := auth.ValidateJWT(tokenString, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	params := parameter{}
+	err = decoder.Decode(&params)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	// hash the password
+	hashedPassword, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not hash the password")
+		return
+	}
+
+	// uodate the user row in the db
+	dbUser, err := cfg.DB.UpdateUser(r.Context(), database.UpdateUserParams{
+		Email:          params.Email,
+		HashedPassword: hashedPassword,
+		ID:             userID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not update user credentials")
+		return
+	}
+
+	// respond the updated user
+	respondWithJson(w, http.StatusOK, User{
+		ID:        dbUser.ID,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.UpdatedAt,
+		Email:     dbUser.Email,
+	})
+}
+
 // Chirps
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	// Validating steps
